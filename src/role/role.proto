@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package role;
+
+service RoleService {
+    rpc HasRole (RoleById) returns (HasRoleResp) {}
+}
+
+message RoleById {
+    string id = 1;
+}
+
+message HasRoleResp {
+    string id = 1;
+    bool status = 2;
+}

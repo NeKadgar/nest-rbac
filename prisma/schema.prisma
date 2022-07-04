@@ -1,0 +1,62 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model AuthUser {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  login       String        @db.VarChar(128)
+  hash        String        @db.VarChar(64)
+  userType    UserTypes     @default(USER)
+  isDeleted   Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  companyUser CompanyUser?
+}
+
+model CompanyUser {
+  authUser    AuthUser  @relation(fields: [authUserId], references: [id])
+  companyID   String    @db.Uuid
+  authUserId  String    @db.Uuid @id @unique
+}
+
+model CompanyRole {
+  id              Int                     @id @default(autoincrement())
+  name            String                  @db.VarChar(64)
+  children        CompanyRole[]           @relation("children")
+  parent          CompanyRole?            @relation("children", fields: [parentId], references: [id])
+  parentId        Int?
+  rolePermissions CompanyRolePermission[]
+}
+
+model CompanyPermission {
+  id              Int                     @id @default(autoincrement())
+  name            String                  @db.VarChar(64)
+  children        CompanyPermission[]     @relation("children")
+  parent          CompanyPermission?      @relation("children", fields: [parentId], references: [id])
+  parentId        Int?
+  rolePermissions CompanyRolePermission[]
+}
+
+model CompanyRolePermission {
+  roleId        Int
+  permissionId  Int
+  role          CompanyRole       @relation(fields: [roleId], references: [id])
+  permission    CompanyPermission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+enum UserTypes {
+  COMPANY_OWNER
+  COMPANY
+  USER
+  ADMIN
+}
